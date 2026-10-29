@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIG - Cross-Border Identity Registry</title>
+    <style>
+        body { font-family: sans-serif; background: #090d16; color: #f8fafc; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #85e024; border-bottom: 3px solid #85e024; padding-bottom: 10px; font-size: 24px; text-transform: uppercase; }
+        .subtitle { color: #facc15; font-size: 13px; margin-bottom: 25px; font-weight: 600; }
+        .section { background: #111827; padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #85e024; }
+        h2 { color: #facc15; font-size: 18px; margin-top: 0; border-bottom: 1px solid #374151; padding-bottom: 8px; }
+        select, input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #4b5563; background: #1f2937; color: white; box-sizing: border-box; }
+        .btn-group { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; margin-top: 8px; }
+        button { background: #85e024; color: #090d16; font-weight: bold; cursor: pointer; border: none; padding: 14px; border-radius: 8px; }
+        button.secondary { background: #374151; color: #f8fafc; border: 1px solid #4b5563; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #1f2937; }
+        th { background: #1f2937; color: #85e024; }
+        .badge { background: #facc15; color: #090d16; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        #console-output, .stats-box { margin-top: 15px; font-family: monospace; background: #090d16; padding: 12px; border-radius: 6px; border: 1px solid #374151; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CIG: Complete Information Governance Registry 🍏</h1>
+        <div class="subtitle">Multi-Jurisdictional Sensitive Data Structure Mapping & Recovery Control</div>
+
+        <div class="section">
+            <h2>1. Primary Sovereign Identity Architecture</h2>
+            <table>
+                <thead><tr><th>Region</th><th>Identifier</th><th>Equivalent</th><th>Authority</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>Nigeria</strong></td><td><span class="badge">NIN</span> National ID</td><td>SSN / NINO</td><td>NIMC</td></tr>
+                    <tr><td><strong>United States</strong></td><td><span class="badge">SSN</span> Social Security</td><td>NIN / CPR</td><td>SSA</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <h2>2. Cryptographic Validation Console</h2>
+            <label for="doc-category" style="color:#85e024; font-weight:600;">Target Sensitive Data Scope</label>
+            <select id="doc-category">
+                Sovereign Identity Registry (NIN / SSN)</option>
+                <option value="financial">Financial Registry (BVN / IBAN)</option>
+                <option value="fiscal">Fiscal Revenue Registry (TIN / EIN)</option>
+            </select>
+
+            <label for="target-reference" style="color:#85e024; font-weight:600;">Reference Token String</label>
+            <input type="text" id="target-reference" placeholder="Enter reference string...">
+            
+            <div class="btn-group">
+                <button onclick="executeSecureLookup()">Evaluate Registry Token</button>
+                <button class="secondary" onclick="clearConsole()">Clear Logs</button>
+            </div>
+            <div id="console-output"><span style="color:#94a3b8;">Console ready.</span></div>
+        </div>
+
+        <div class="section">
+            <h2>3. Administrative System Metrics</h2>
+            <button onclick="refreshMetrics()" style="padding:10px; font-size:14px; width:auto; margin-bottom:10px;">Fetch Audit Statistics</button>
+            <div class="stats-box" id="metrics-box"><span style="color:#94a3b8;">Awaiting command execution.</span></div>
+        </div>
+    </div>
+    <script>
+        function executeSecureLookup() {
+            const tokenValue = document.getElementById('target-reference').value;
+            const outputBox = document.getElementById('console-output');
+            const selectedScope = document.getElementById('doc-category').value;
+            
+            if(!tokenValue) {
+                outputBox.innerHTML = "<span style='color:#ef4444;'>[ABORT] Null parameters.</span>";
+                return;
+            }
+            outputBox.innerHTML = "<span style='color:#facc15;'>[PROCESSING] Matching cryptographic signatures...</span>";
+
+            fetch('/api/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_number: tokenValue, scope: selectedScope })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    outputBox.innerHTML = `<span style='color:#85e024;'>[SUCCESS] Verification passed.<br>Scope: ${selectedScope.toUpperCase()}<br>Suffix: ${data.suffix}<br>Owner: ${data.masked_name}</span>`;
+                } else {
+                    outputBox.innerHTML = `<span style='color:#ef4444;'>[DENIED] ${data.message}</span>`;
+                }
+            })
+            .catch(err => { outputBox.innerHTML = "<span style='color:#ef4444;'>[ERROR] Rate-limit hit or server offline.</span>"; });
+        }
+
+        function clearConsole() {
+            document.getElementById('target-reference').value = "";
+            document.getElementById('console-output').innerHTML = "<span style='color:#94a3b8;'>Console ready.</span>";
+        }
+
+        function refreshMetrics() {
+            const mBox = document.getElementById('metrics-box');
+            mBox.innerHTML = "<span style='color:#facc15;'>Parsing logs...</span>";
+            
+            fetch('/api/metrics')
+                .then(res => res.json())
+                .then(data => {
+                    let out = "<span style='color:#85e024;'>[LOG PARSE COMPLETE]</span><br>";
+                    out += "-----------------------------------<br>";
+                    out += "📄 Total Entries: " + data.total_entries + "<br>";
+                    out += "🟢 Successful:    " + data.successful + "<br>";
+                    out += "🔴 Failed:        " + data.failed + "<br>";
+                    out += "-----------------------------------<br>";
+                    out += "System Health:    " + data.status;
+                    mBox.innerHTML = out;
+                })
+                .catch(err => { mBox.innerHTML = "<span style='color:#ef4444;'>Failed to fetch metrics data.</span>"; });
+        }
+    </script>
+</body>
+</html>
+
