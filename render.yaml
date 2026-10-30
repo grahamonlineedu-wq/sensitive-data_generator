@@ -2,7 +2,7 @@ services:
   - type: web
     name: sensitive-data-generator
     env: python
-    region: frankfurt # Or ohio,oregon,singapore depending on preference
+    region: frankfurt
     plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn server:app
@@ -13,4 +13,3 @@ services:
         value: server.py
       - key: FLASK_ENV
         value: production
-
