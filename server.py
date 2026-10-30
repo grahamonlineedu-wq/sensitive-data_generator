@@ -19,12 +19,9 @@ def load_database():
     return {"records": []}
 
 def security_validation_agent(req_headers, req_body):
-    auth_token = req_headers.get("Authorization")
     official_code = req_body.get("official_clearance_code")
-
     if not official_code or official_code != EMERGENCY_ACCESS_KEY:
         return False, "Security Agent: Unauthorized access. Invalid clearance code."
-
     return True, "Security Agent: Clearance verified successfully."
 
 def data_synthesis_agent(user_id, purpose):
@@ -71,4 +68,4 @@ def dual_agent_orchestrator():
     }), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=PORT, debug=True)
+    app.run(host='0.0.0.0', port=PORT, debug=False)
