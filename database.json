@@ -1,19 +1,12 @@
 {
-    "users": [
-        {
-            "id": "usr_01",
-            "scope": "financial",
-            "masked_name": "Verified Financial Record Holder",
-            "account_suffix": "1189",
-            "account_hash": "8003b4b053127e1d97c91ca589c139f6fa7fbeb510b3c447d30fae017635b610"
-        },
-        {
-            "id": "usr_02",
-            "scope": "identity",
-            "masked_name": "User: Festus O.",
-            "account_suffix": "9999",
-            "account_hash":" 8003b4b053127e1d97c91ca589c139f6fa7fbeb510b3c447d30fae017635b610"
-        }
-    ]
+  "records": [
+    {
+      "user_id": "user_001",
+      "name": "Jesse John",
+      "clearance_level": "Level-3",
+      "sensitive_data": "Credential-Token-98765",
+      "department": "Engineering Operations"
+    }
+  ]
 }
 
