@@ -1,117 +1,78 @@
-from flask import Flask, request, jsonify, render_template, make_response
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-import json
-import hashlib
-import logging
 import os
+import json
+from flask import Flask, request, jsonify
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 
-logging.basicConfig(
-    filename='security.log',
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
-)
-
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["100 per day"],
-    storage_uri="memory://"
-)
+PORT = int(os.getenv("PORT", 5000))
+DATABASE_URL = os.getenv("DATABASE_URL")
+MONGO_URI = os.getenv("MONGO_URI")
+EMERGENCY_ACCESS_KEY = os.getenv("EMERGENCY_ACCESS_KEY", "SECURE-KEY-2026")
 
 def load_database():
-    with open('database.json', 'r') as file:
-        return json.load(file)
+    if os.path.exists("database.json"):
+        with open("database.json", "r") as f:
+            return json.load(f)
+    return {"records": []}
 
-@app.errorhandler(429)
-def ratelimit_handler(e):
-    logging.warning(f"Security Alert: Rate limit exceeded by client IP: {request.remote_addr}")
+def security_validation_agent(req_headers, req_body):
+    auth_token = req_headers.get("Authorization")
+    official_code = req_body.get("official_clearance_code")
+
+    if not official_code or official_code != EMERGENCY_ACCESS_KEY:
+        return False, "Security Agent: Unauthorized access. Invalid clearance code."
+    
+    return True, "Security Agent: Clearance verified successfully."
+
+def data_synthesis_agent(user_id, purpose):
+    db = load_database()
+    user_records = [r for r in db.get("records", []) if r.get("user_id") == user_id]
+
+    if not user_records:
+        return None, "Synthesis Agent: No matching sensitive records found."
+
+    report = {
+        "agent_status": "SUCCESS",
+        "purpose_stated": purpose,
+        "target_user": user_id,
+        "payload": user_records,
+        "classification": "CONFIDENTIAL - OFFICIAL USE ONLY"
+    }
+    return report, "Synthesis Agent: Data successfully retrieved and structured."
+
+@app.route('/api/dual-agent-fetch', methods=['POST'])
+def dual_agent_orchestrator():
+    data = request.json or {}
+    user_id = data.get("user_id")
+    purpose = data.get("purpose", "Formal Emergency Request")
+
+    is_secure, security_msg = security_validation_agent(request.headers, data)
+    if not is_secure:
+        return jsonify({"error": security_msg}), 403
+
+    synthesized_data, synthesis_msg = data_synthesis_agent(user_id, purpose)
+    if not synthesized_data:
+        return jsonify({"error": synthesis_msg}), 404
+
     return jsonify({
-        "status": "error",
-        "message": "Too many requests. Cyber-security rate limit triggered. Please slow down."
-    }), 429
-
+        "audit_trail": {
+            "security_check": security_msg,
+            "synthesis_status": synthesis_msg,
+            "timestamp": os.popen("date -u").read().strip()
+        },
+        "result": synthesized_data
+    }), 200
 
 @app.route('/', methods=['GET'])
-def home():
-    logging.info(f"CIG Reference Portal accessed by remote IP: {request.remote_addr}")
-    # CACHE BUSTING FIX: Tells browser to fetch structural updates immediately instead of loading from old memory cache
-    response = make_response(render_template('index.html'))
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    response.headers['Pragma'] = 'no-cache'
-    response.headers['Expires'] = '0'
-    return response, 200
-
-
-@app.route('/api/verify', methods=['POST'])
-@limiter.limit("5 per minute")
-def verify_identity():
-    data = request.get_json()
-
-    if not data or 'account_number' not in data or 'scope' not in data:
-        logging.warning(f"Malformed payload block triggered from IP: {request.remote_addr}")
-        return jsonify({"status": "error", "message": "Bad Request. Missing target metrics."}), 400
-
-    input_account = data['account_number'].strip()
-    target_scope = data['scope'].strip()
-
-    hasher = hashlib.sha256()
-    hasher.update(input_account.encode('utf-8'))
-    input_hash = hasher.hexdigest()
-    input_suffix = input_account[-4:]
-
-    db = load_database()
-
-    for user in db['users']:
-        if (user['account_hash'] == input_hash and
-            user['account_suffix'] == input_suffix and
-            user['scope'] == target_scope):
-
-            logging.info(f"Identity Verification: SUCCESS for scope [{target_scope}] Suffix: {input_suffix} from IP: {request.remote_addr}")
-            return jsonify({
-                "status": "success",
-                "match": True,
-                "masked_name": user['masked_name'],
-                "suffix": user['account_suffix']
-            }), 200
-
-    logging.warning(f"Identity Verification: FAILED lookup for scope [{target_scope}] Suffix: {input_suffix} from IP: {request.remote_addr}")
-    return jsonify({"status": "denied", "message": "Signature verification failed for the selected scope."}), 401
-
-
-@app.route('/api/metrics', methods=['GET'])
-def get_system_metrics():
-    log_file = 'security.log'
-    if not os.path.exists(log_file):
-        return jsonify({"total_entries": 0, "successful": 0, "failed": 0, "status": "NOMINAL"})
-
-    success_count = 0
-    failed_count = 0
-    total_lines = 0
-
-    with open(log_file, 'r') as file:
-        for line in file:
-            total_lines += 1
-            if "SUCCESS" in line:
-                success_count += 1
-            elif "FAILED" in line:
-                failed_count += 1
-
-    status = "NOMINAL"
-    if failed_count > success_count * 2 and failed_count > 0:
-        status = "ALERT_ELEVATED_FAILURES"
-
+def health_check():
     return jsonify({
-        "total_entries": total_lines,
-        "successful": success_count,
-        "failed": failed_count,
-        "status": status
+        "status": "online",
+        "service": "Sensitive Data Generator & Dual-Agent API",
+        "database_connected": bool(DATABASE_URL or MONGO_URI)
     }), 200
 
 if __name__ == '__main__':
-    print("--- Starting Enhanced CIG Web API and Dashboard Server ---")
-    app.run(host='127.0.0.1', port=5000, debug=True)
-
+    app.run(host='0.0.0.0', port=PORT, debug=True)
