@@ -1,6 +1,6 @@
 import os
 import json
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -43,6 +43,10 @@ def data_synthesis_agent(user_id, purpose):
     }
     return report, "Synthesis Agent: Data successfully retrieved and structured."
 
+@app.route('/', methods=['GET'])
+def index():
+    return render_template('index.html')
+
 @app.route('/api/dual-agent-fetch', methods=['POST'])
 def dual_agent_orchestrator():
     data = request.json or {}
@@ -64,14 +68,6 @@ def dual_agent_orchestrator():
             "timestamp": os.popen("date -u").read().strip()
         },
         "result": synthesized_data
-    }), 200
-
-@app.route('/', methods=['GET'])
-def health_check():
-    return jsonify({
-        "status": "online",
-        "service": "Sensitive Data Generator & Dual-Agent API",
-        "database_connected": bool(DATABASE_URL or MONGO_URI)
     }), 200
 
 if __name__ == '__main__':
