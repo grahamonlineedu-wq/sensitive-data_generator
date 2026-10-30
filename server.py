@@ -24,7 +24,7 @@ def security_validation_agent(req_headers, req_body):
 
     if not official_code or official_code != EMERGENCY_ACCESS_KEY:
         return False, "Security Agent: Unauthorized access. Invalid clearance code."
-    
+
     return True, "Security Agent: Clearance verified successfully."
 
 def data_synthesis_agent(user_id, purpose):
